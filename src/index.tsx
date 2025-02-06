@@ -1,6 +1,7 @@
 import { Notification, Strip } from "@canonical/react-components";
 import { unwrapResult } from "@reduxjs/toolkit";
 import * as Sentry from "@sentry/browser";
+import type { LogLevelDesc } from "loglevel";
 import { StrictMode } from "react";
 import type { Root } from "react-dom/client";
 import { createRoot } from "react-dom/client";
@@ -103,6 +104,10 @@ function bootstrap() {
         authMethod: getAuthMethod(windowConfig),
       }
     : null;
+  const isProduction = import.meta.env.PROD;
+  const logLevel: LogLevelDesc = isProduction
+    ? logger.levels.SILENT
+    : logger.levels.TRACE;
   let error: string | null = null;
   if (!config) {
     error = Label.NO_CONFIG;
@@ -143,7 +148,7 @@ function bootstrap() {
     }
   }
 
-  if (import.meta.env.PROD && config.analyticsEnabled) {
+  if (isProduction && config.analyticsEnabled) {
     Sentry.setTag("isJuju", config.isJuju);
   }
 
@@ -166,7 +171,7 @@ function bootstrap() {
   getRoot()?.render(
     <Provider store={reduxStore}>
       <StrictMode>
-        <App />
+        <App logLevel={logLevel} />
       </StrictMode>
     </Provider>,
   );
