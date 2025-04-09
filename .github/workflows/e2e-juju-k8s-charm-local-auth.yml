@@ -42,3 +42,5 @@ jobs:
           CONTROLLER_NAME: ${{steps.microk8s-controller.outputs.name}}
           AUTH_MODE: local
           JUJU_ENV: juju
+          USERNAME: admin
+          PASSWORD: ${{ inputs.admin-password }}

@@ -31,3 +31,5 @@ jobs:
           CONTROLLER_NAME: test
           AUTH_MODE: candid
           JUJU_ENV: juju
+          USERNAME: admin
+          PASSWORD: ${{ inputs.admin-password }}
