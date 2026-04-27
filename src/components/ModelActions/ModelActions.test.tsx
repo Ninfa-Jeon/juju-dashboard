@@ -1,4 +1,5 @@
-import { screen } from "@testing-library/react";
+import { act, screen } from "@testing-library/react";
+import type { UserEvent } from "@testing-library/user-event";
 import userEvent from "@testing-library/user-event";
 
 import { JIMMRelation, JIMMTarget } from "juju/jimm/JIMMV4";
@@ -10,18 +11,28 @@ import {
   controllerFeaturesFactory,
   controllerFeaturesStateFactory,
 } from "testing/factories/general";
+import { modelStatusInfoFactory } from "testing/factories/juju/ClientV8";
 import {
   modelInfoFactory,
   modelUserInfoFactory,
 } from "testing/factories/juju/ModelManagerV10";
-import { rebacAllowedFactory } from "testing/factories/juju/jimm";
 import {
+  modelMigrationTargetFactory,
+  rebacAllowedFactory,
+  relationshipTupleFactory,
+  versionElemFactory,
+} from "testing/factories/juju/jimm";
+import {
+  controllerFactory,
   jujuStateFactory,
   modelDataFactory,
   modelListInfoFactory,
+  modelMigrationTargetsStateFactory,
   rebacState,
+  supportedJujuVersionsStateFactory,
 } from "testing/factories/juju/juju";
 import { rootStateFactory } from "testing/factories/root";
+import { customWithin } from "testing/queries/within";
 import { renderComponent } from "testing/utils";
 
 import ModelActions from "./ModelActions";
@@ -30,9 +41,11 @@ import { Label } from "./types";
 describe("ModelActions", () => {
   let state: RootState;
   beforeEach(() => {
+    localStorage.setItem("flags", JSON.stringify(["rebac"]));
     state = rootStateFactory.build({
       general: generalStateFactory.withConfig().build({
         config: configFactory.build({
+          controllerAPIEndpoint: "wss://jimm.jujucharms.com/api",
           isJuju: true,
         }),
         controllerConnections: {
@@ -42,6 +55,11 @@ describe("ModelActions", () => {
             }),
           },
         },
+        controllerFeatures: controllerFeaturesStateFactory.build({
+          "wss://jimm.jujucharms.com/api": controllerFeaturesFactory.build({
+            rebac: true,
+          }),
+        }),
       }),
       juju: jujuStateFactory.build({
         models: {
@@ -69,8 +87,24 @@ describe("ModelActions", () => {
             uuid: "abc123",
           }),
         },
+        rebac: {
+          allowed: [
+            rebacAllowedFactory.build({
+              tuple: relationshipTupleFactory.build({
+                object: "user-eggman@external",
+                relation: JIMMRelation.ADMINISTRATOR,
+                target_object: JIMMTarget.JIMM_CONTROLLER,
+              }),
+              allowed: true,
+            }),
+          ],
+        },
       }),
     });
+  });
+
+  afterEach(() => {
+    localStorage.removeItem("flags");
   });
 
   it("displays the actions menu", () => {
@@ -266,7 +300,12 @@ describe("ModelActions", () => {
   });
 
   describe("upgrade model", () => {
+    let userEventWithTimers: UserEvent;
+
     beforeEach(() => {
+      userEventWithTimers = userEvent.setup({
+        advanceTimers: vi.advanceTimersByTime,
+      });
       state = rootStateFactory.build({
         general: generalStateFactory.build({
           config: configFactory.build({
@@ -285,6 +324,20 @@ describe("ModelActions", () => {
           }),
         }),
         juju: jujuStateFactory.build({
+          controllers: {
+            "wss://example.com/api": [
+              controllerFactory.build({
+                uuid: "controller123",
+                version: "1.2.3",
+                name: "controller1",
+              }),
+              controllerFactory.build({
+                uuid: "controller456",
+                version: "4.6.14",
+                name: "controller2",
+              }),
+            ],
+          },
           modelData: {
             abc123: modelDataFactory.build({
               info: modelInfoFactory.build({
@@ -297,6 +350,9 @@ describe("ModelActions", () => {
                     access: "admin",
                   }),
                 ],
+              }),
+              model: modelStatusInfoFactory.build({
+                version: "1.2.3",
               }),
             }),
           },
@@ -314,11 +370,122 @@ describe("ModelActions", () => {
               }),
             ],
           }),
+          modelMigrationTargets: modelMigrationTargetsStateFactory.build({
+            abc123: modelMigrationTargetFactory.build({
+              data: ["controller123", "controller456"],
+            }),
+          }),
+          supportedJujuVersions: supportedJujuVersionsStateFactory.build({
+            data: [
+              versionElemFactory.build({ version: "1.2.3" }),
+              versionElemFactory.build({ version: "4.6.14" }),
+            ],
+          }),
         }),
       });
     });
 
-    it("displays the upgrade model option", async () => {
+    afterEach(() => {
+      vi.useRealTimers();
+    });
+
+    it("displays the loading state", async () => {
+      state.juju.modelMigrationTargets = {
+        abc123: modelMigrationTargetFactory.build({
+          data: undefined,
+        }),
+      };
+      state.juju.supportedJujuVersions =
+        supportedJujuVersionsStateFactory.build({
+          data: undefined,
+        });
+      renderComponent(
+        <ModelActions
+          qualifier="eggman@external"
+          modelUUID="abc123"
+          modelName="test1"
+        />,
+        {
+          state,
+        },
+      );
+      await userEvent.click(screen.getByRole("button", { name: Label.TOGGLE }));
+      const upgrade = screen.getByRole("menuitem", {
+        name: new RegExp(Label.UPGRADE),
+      });
+      expect(
+        customWithin(upgrade).getSpinnerByLabel("Loading"),
+      ).toBeInTheDocument();
+      expect(upgrade).toHaveAttribute("aria-disabled", "true");
+    });
+
+    it("disables the upgrade option if there are no available controllers", async () => {
+      vi.useFakeTimers();
+      state.juju.modelMigrationTargets = {
+        abc123: modelMigrationTargetFactory.build({
+          data: [],
+        }),
+      };
+      renderComponent(
+        <ModelActions
+          qualifier="eggman@external"
+          modelUUID="abc123"
+          modelName="test1"
+        />,
+        {
+          state,
+        },
+      );
+      await userEventWithTimers.click(
+        screen.getByRole("button", { name: Label.TOGGLE }),
+      );
+      const menuItem = screen.getByRole("menuitem", { name: Label.UPGRADE });
+      expect(menuItem).toHaveAttribute("aria-disabled", "true");
+      await act(async () => {
+        await userEventWithTimers.hover(menuItem);
+        vi.runAllTimers();
+      });
+      expect(menuItem).toHaveAccessibleDescription(
+        "No upgrade available. Bootstrap a controller >=4.6.14 version first, to enable upgrades.",
+      );
+    });
+
+    it("disables the upgrade option if it is on the latest version", async () => {
+      vi.useFakeTimers();
+      state.juju.modelData.abc123.model.version = "4.6.14";
+      if (state.juju.modelData.abc123.info) {
+        state.juju.modelData.abc123.info["controller-uuid"] = "controller456";
+      } else {
+        assert.fail("Model info is undefined");
+      }
+      state.juju.modelMigrationTargets = {
+        abc123: modelMigrationTargetFactory.build({
+          data: [],
+        }),
+      };
+      renderComponent(
+        <ModelActions
+          qualifier="eggman@external"
+          modelUUID="abc123"
+          modelName="test1"
+        />,
+        {
+          state,
+        },
+      );
+      await userEventWithTimers.click(
+        screen.getByRole("button", { name: Label.TOGGLE }),
+      );
+      const menuItem = screen.getByRole("menuitem", { name: Label.UPGRADE });
+      expect(menuItem).toHaveAttribute("aria-disabled", "true");
+      await act(async () => {
+        await userEventWithTimers.hover(menuItem);
+        vi.runAllTimers();
+      });
+      expect(menuItem).toHaveAccessibleDescription(Label.UPGRADE_LATEST);
+    });
+
+    it("enables the upgrade option if there are upgrades", async () => {
       renderComponent(
         <ModelActions
           qualifier="eggman@external"
@@ -332,7 +499,7 @@ describe("ModelActions", () => {
       await userEvent.click(screen.getByRole("button", { name: Label.TOGGLE }));
       expect(
         screen.getByRole("menuitem", { name: Label.UPGRADE }),
-      ).toBeInTheDocument();
+      ).not.toHaveAttribute("aria-disabled");
     });
 
     it("opens the upgrade model panel", async () => {

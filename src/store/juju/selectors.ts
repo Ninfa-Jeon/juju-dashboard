@@ -1427,6 +1427,44 @@ export const getModelMigrationTargets = createSelector(
     },
 );
 
+export const getHighestSupportedVersion = createSelector(
+  [getSupportedJujuVersions],
+  (versions) =>
+    versions.data?.reduce<null | VersionElem>((highest, version) => {
+      if (!highest || isHigherSemver(version.version, highest.version)) {
+        highest = version;
+      }
+      return highest;
+    }, null) ?? null,
+);
+
+export const getNextSupportedVersion = createSelector(
+  [
+    getSupportedJujuVersions,
+    (_state, version?: null | string): null | string | undefined => version,
+  ],
+  (versions, version) => {
+    if (!version) {
+      return null;
+    }
+    return (
+      versions.data?.reduce<null | VersionElem>((next, supportedVersion) => {
+        const higherThanCurrent = isHigherSemver(
+          supportedVersion.version,
+          version,
+        );
+        if (
+          higherThanCurrent &&
+          (!next || isHigherSemver(next.version, supportedVersion.version))
+        ) {
+          next = supportedVersion;
+        }
+        return next;
+      }, null) ?? null
+    );
+  },
+);
+
 /**
  * Get the controller objects for model migration targets that have a specific version.
  */
@@ -1481,13 +1519,14 @@ export const getModelUpgradeVersions = createSelector(
     if (!controllers) {
       return [];
     }
+    const modelVersion = model?.model.version;
     const upgradeVersions = (migrationTargets.data ?? []).reduce<VersionElem[]>(
       (versions, controllerUUID) => {
         const controller = getControllerByUUIDUtil(controllers, controllerUUID);
         const controllerVersion = controller
           ? getControllerVersion(controller)
           : null;
-        if (controllerVersion) {
+        if (controllerVersion && controllerVersion !== modelVersion) {
           const version = supportedVersions.data?.find(
             (supportedVersion) =>
               supportedVersion.version === controllerVersion,
@@ -1509,7 +1548,6 @@ export const getModelUpgradeVersions = createSelector(
     const controllerVersion = modelController
       ? getControllerVersion(modelController)
       : null;
-    const modelVersion = model?.model.version;
     if (
       modelVersion &&
       controllerVersion &&
@@ -1525,6 +1563,20 @@ export const getModelUpgradeVersions = createSelector(
     }
     return upgradeVersions;
   },
+);
+
+/**
+ * Get the version objects filtered by versions that have corresponding
+ * model migration targets.
+ */
+export const getModelUpgradeDataLoaded = createSelector(
+  [getSupportedJujuVersions, getModelMigrationTargets, getModelDataByUUID],
+  (supportedVersions, migrationTargets, model) =>
+    // This checks the existence of the data instead of using the loading state otherwise,
+    // each time it polls data in the background it will be marked as not loaded.
+    !!supportedVersions.data &&
+    // If there is no model (e.g. if it's using an invalid UUID) then the migration targets won't exist.
+    (!model || (!!model && !!migrationTargets.data)),
 );
 
 /**
