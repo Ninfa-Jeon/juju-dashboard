@@ -1,4 +1,4 @@
-import type { CategoryDefinition } from "./configCatalog";
+import { CONFIG_CATEGORIES, type CategoryDefinition } from "./configCatalog";
 
 export const isConfigChanged = (
   label: string,
@@ -24,24 +24,20 @@ export const isConfigChanged = (
 
 export const getChangedFields = (
   category: CategoryDefinition,
-  onlyChanged: boolean,
   values: Record<string, string>,
 ): CategoryDefinition["fields"] =>
-  onlyChanged
-    ? category.fields.filter((field) =>
-        isConfigChanged(field.label, values, field.defaultValue),
-      )
-    : category.fields;
+  category.fields.filter((field) =>
+    isConfigChanged(field.label, values, field.defaultValue),
+  );
 
 export const getCategoriesWithVisibleConfigs = (
   categories: CategoryDefinition[],
-  onlyChanged: boolean,
   values: Record<string, string>,
 ): Array<{ category: string; fields: CategoryDefinition["fields"] }> =>
   categories
     .map((cat) => ({
       category: cat.category,
-      fields: getChangedFields(cat, onlyChanged, values),
+      fields: getChangedFields(cat, values),
     }))
     .filter(({ fields }) => fields.length > 0);
 
@@ -51,13 +47,11 @@ export const buildConfigYAML = (
 ): string => {
   const yamlSections = categories
     .map((category) => {
-      const changedFields = getChangedFields(category, true, values).map(
-        (field) => {
-          const value = values[field.label];
-          const quotedValue = value === "" ? '""' : value;
-          return `${field.label}: ${quotedValue}`;
-        },
-      );
+      const changedFields = getChangedFields(category, values).map((field) => {
+        const value = values[field.label];
+        const quotedValue = value === "" ? '""' : value;
+        return `${field.label}: ${quotedValue}`;
+      });
 
       if (changedFields.length === 0) {
         return null;
@@ -70,6 +64,17 @@ export const buildConfigYAML = (
   return yamlSections.join("\n\n");
 };
 
+export const buildChangedConfigPayload = (
+  categories: CategoryDefinition[],
+  values: Record<string, string>,
+): Record<string, string> =>
+  categories.reduce<Record<string, string>>((config, category) => {
+    getChangedFields(category, values).forEach((field) => {
+      config[field.label] = values[field.label];
+    });
+    return config;
+  }, {});
+
 export const getConfigInitialValues = (
   categories: CategoryDefinition[],
 ): Record<string, string> =>
@@ -79,3 +84,18 @@ export const getConfigInitialValues = (
     });
     return values;
   }, {});
+
+export const filterConfigsBySearch = (query: string): CategoryDefinition[] => {
+  const lowerQuery = query.toLowerCase().trim();
+  if (!lowerQuery) {
+    return CONFIG_CATEGORIES;
+  }
+  return CONFIG_CATEGORIES.map((category) => ({
+    ...category,
+    fields: category.fields.filter(
+      (field) =>
+        field.label.toLowerCase().includes(lowerQuery) ||
+        field.description.toLowerCase().includes(lowerQuery),
+    ),
+  })).filter((category) => category.fields.length > 0);
+};

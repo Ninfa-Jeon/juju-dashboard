@@ -2,13 +2,17 @@ import {
   Col,
   FormikField,
   Row,
+  SearchBox,
   Switch,
   Textarea,
   List,
+  Tooltip,
 } from "@canonical/react-components";
+import classNames from "classnames";
 import { useFormikContext } from "formik";
 import { useState, type ChangeEvent, type JSX } from "react";
 
+import useDebounce from "hooks/useDebounce";
 import { testId } from "testing/utils";
 import { externalURLs } from "urls";
 
@@ -18,7 +22,11 @@ import StackList from "./StackList";
 import { CONFIG_CATEGORIES } from "./configCatalog";
 import { DISABLED_COMMAND_OPTIONS } from "./disabledCommandOptions";
 import { type FormFields, FieldName, Label, TestId } from "./types";
-import { buildConfigYAML, getCategoriesWithVisibleConfigs } from "./utils";
+import {
+  buildConfigYAML,
+  filterConfigsBySearch,
+  getCategoriesWithVisibleConfigs,
+} from "./utils";
 
 const ConfigsConstraints = (): JSX.Element => {
   const { values, setFieldValue } = useFormikContext<
@@ -26,6 +34,7 @@ const ConfigsConstraints = (): JSX.Element => {
   >();
 
   const [changedOnly, setChangedOnly] = useState(false);
+  const [searchQuery, setSearchQuery] = useDebounce("", 250);
   const isConfigListMode =
     values[FieldName.CONFIG_INPUT_MODE] !== InputMode.YAML;
 
@@ -43,10 +52,28 @@ const ConfigsConstraints = (): JSX.Element => {
     );
   };
 
-  const categoriesWithConfigs = getCategoriesWithVisibleConfigs(
-    CONFIG_CATEGORIES,
-    changedOnly,
+  const filteredCategories = filterConfigsBySearch(searchQuery);
+  const categoriesWithChangedConfigs = getCategoriesWithVisibleConfigs(
+    filteredCategories,
     values,
+  );
+  const hasChangedConfigs = categoriesWithChangedConfigs.length > 0;
+  const visibleCategories = changedOnly
+    ? categoriesWithChangedConfigs
+    : filteredCategories;
+
+  const changedOnlySwitch = (
+    <Switch
+      label={Label.CHANGED_CONFIGS_ONLY}
+      checked={changedOnly}
+      onChange={(event: ChangeEvent<HTMLInputElement>): void => {
+        if (!hasChangedConfigs && event.target.checked) {
+          return;
+        }
+
+        setChangedOnly(event.target.checked);
+      }}
+    />
   );
 
   return (
@@ -57,27 +84,51 @@ const ConfigsConstraints = (): JSX.Element => {
         docsLink={externalURLs.configureModel}
         primaryContent={
           <>
-            <Switch
-              label={Label.CHANGED_CONFIGS_ONLY}
-              checked={changedOnly}
-              onChange={(event: ChangeEvent<HTMLInputElement>) => {
-                setChangedOnly(event.target.checked);
-              }}
-            />
-            <div className="configs__form-scroll">
-              {categoriesWithConfigs.map(({ category, fields }, index) => (
-                <Row key={category} className="u-no-padding u-sv1--top">
-                  <Col size={3}>
-                    <h5>{category}</h5>
-                  </Col>
-                  <Col size={9}>
-                    <StackList visibleConfigs={fields} />
-                  </Col>
-                  {index < categoriesWithConfigs.length - 1 ? (
-                    <hr className="p-rule--muted" />
-                  ) : null}
-                </Row>
-              ))}
+            <div className="row u-no-padding">
+              <div className="col-4">
+                <SearchBox
+                  name="configSearch"
+                  id="configSearch"
+                  placeholder="Search configurations"
+                  onChange={setSearchQuery}
+                  onClear={() => {
+                    setSearchQuery("", { immediate: true });
+                  }}
+                  className="u-no-margin--bottom"
+                  aria-label="Search configurations"
+                />
+              </div>
+            </div>
+            {hasChangedConfigs ? (
+              changedOnlySwitch
+            ) : (
+              <Tooltip message={Label.NO_CHANGED_CONFIGS} position="btm-left">
+                {changedOnlySwitch}
+              </Tooltip>
+            )}
+            <div className="configs__form-scroll u-sv-1--top">
+              {visibleCategories.length > 0 ? (
+                visibleCategories.map(({ category, fields }, index) => (
+                  <Row
+                    key={category}
+                    className={classNames("u-no-padding", {
+                      "u-sv1--top": index !== 0,
+                    })}
+                  >
+                    <Col size={3}>
+                      <h5>{category}</h5>
+                    </Col>
+                    <Col size={9}>
+                      <StackList visibleConfigs={fields} />
+                    </Col>
+                    {index < visibleCategories.length - 1 ? (
+                      <hr className="p-rule--muted" />
+                    ) : null}
+                  </Row>
+                ))
+              ) : (
+                <h5>No results found for {`"${searchQuery}"`}</h5>
+              )}
             </div>
           </>
         }
