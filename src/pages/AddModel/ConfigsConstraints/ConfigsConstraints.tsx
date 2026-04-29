@@ -4,6 +4,7 @@ import {
   Row,
   Switch,
   Textarea,
+  List,
 } from "@canonical/react-components";
 import { useFormikContext } from "formik";
 import { useState, type ChangeEvent, type JSX } from "react";
@@ -15,6 +16,7 @@ import ContentSwitcher from "./ContentSwitcher";
 import { InputMode } from "./ContentSwitcher/types";
 import StackList from "./StackList";
 import { CONFIG_CATEGORIES } from "./configCatalog";
+import { DISABLED_COMMAND_OPTIONS } from "./disabledCommandOptions";
 import { type FormFields, FieldName, Label, TestId } from "./types";
 import { buildConfigYAML, getCategoriesWithVisibleConfigs } from "./utils";
 
@@ -93,6 +95,35 @@ const ConfigsConstraints = (): JSX.Element => {
         }
         onModeChange={handleConfigModeChange}
         title="Configuration (optional)"
+      />
+      <h5 className="u-no-padding--top u-no-margin--bottom">
+        {Label.DISABLED_COMMANDS}
+      </h5>
+      <p className="u-no-margin--bottom p-text--small">
+        <a href={externalURLs.disableCommand}>{Label.DISABLE_COMMANDS_DOCS}</a>
+      </p>
+      <List
+        items={DISABLED_COMMAND_OPTIONS.map(
+          ({ label, value, description, disabledCommands }) => (
+            <div className="disabled-commands__option" key={value}>
+              <FormikField
+                type="radio"
+                name={FieldName.DISABLED_COMMANDS}
+                label={label}
+                value={value}
+              />
+              <div className="p-text--small u-no-margin--bottom">
+                {description}
+                {disabledCommands ? (
+                  <div>
+                    <b>Disables commands:</b> {disabledCommands.join(", ")}
+                  </div>
+                ) : null}
+              </div>
+            </div>
+          ),
+        )}
+        divided
       />
     </div>
   );

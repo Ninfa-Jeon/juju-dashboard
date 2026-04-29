@@ -14,6 +14,7 @@ import {
   findAuditEvents,
 } from "juju/jimm/api";
 import type { DestroyModelErrors } from "juju/types";
+import { DisableType } from "pages/AddModel/ConfigsConstraints/types";
 import { actions as appActions, thunks as appThunks } from "store/app";
 import { updateModelStatuses } from "store/app/actions";
 import { actions as generalActions } from "store/general";
@@ -30,6 +31,7 @@ import {
   createConnectionMiddleware,
   type ConnectionManager,
 } from "./connection";
+import { disableCommand } from "./process";
 import cloudInfoMiddleware from "./source/cloud-info";
 import modelListMiddleware from "./source/model-list";
 import { ModelsError } from "./types";
@@ -507,6 +509,7 @@ function runModelPoller(
         credential,
         region,
         userTag,
+        disabledCommands,
       } = action.payload;
       // Immediately pass the action along so that it can be handled by the
       // reducer to update the loading state.
@@ -534,7 +537,27 @@ function runModelPoller(
         if (response) {
           if ("error" in response) {
             throw response.error;
+          } else if (
+            disabledCommands !== DisableType.NONE &&
+            typeof response.uuid === "string" &&
+            response.uuid.length > 0
+          ) {
+            const modelURL = wsControllerURL.replace(
+              "/api",
+              `/model/${response.uuid}/api`,
+            );
+            reduxStore.dispatch(
+              disableCommand.run({
+                modelUUID: response.uuid,
+                modelURL,
+                wsControllerURL,
+                params: {
+                  type: disabledCommands,
+                },
+              }),
+            );
           }
+
           reduxStore.dispatch(
             jujuActions.setAddModelResult({
               success: true,

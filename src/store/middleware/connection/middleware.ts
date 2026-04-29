@@ -53,8 +53,14 @@ export function createConnectionMiddleware(): {
   }
 
   const connections = new ConnectionManager({
-    getCredentials: (wsControllerURL): AuthCredential | undefined =>
-      getUserPass(getStore().getState(), wsControllerURL),
+    getCredentials: (connectionURL): AuthCredential | undefined => {
+      const state = getStore().getState();
+      const modelURLMatch = connectionURL.match(/^(.*)\/model\/[^/]+\/api\/?$/);
+      return getUserPass(
+        state,
+        modelURLMatch ? `${modelURLMatch[1]}/api` : connectionURL,
+      );
+    },
     onConnection: async (wsControllerURL, connection): Promise<void> => {
       const store = getStore();
 

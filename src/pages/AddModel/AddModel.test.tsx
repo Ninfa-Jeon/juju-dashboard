@@ -16,7 +16,11 @@ import { createStore, renderComponent } from "testing/utils";
 import urls from "urls";
 
 import AddModel from "./AddModel";
-import { TestId as ConfigsConstraintsTestId } from "./ConfigsConstraints/types";
+import {
+  TestId as ConfigsConstraintsTestId,
+  Label as ConfigsConstraintsLabel,
+  DisableType,
+} from "./ConfigsConstraints/types";
 import {
   TestId as MandatoryDetailsTestId,
   Label as MandatoryDetailsLabel,
@@ -244,11 +248,48 @@ describe("AddModel page", () => {
       modelName: "my-model",
       userTag: "user-eggman@external",
       wsControllerURL: "wss://controller.example.com",
+      disabledCommands: DisableType.NONE,
     });
 
     await userEvent.type(
       screen.getByLabelText(new RegExp(MandatoryDetailsLabel.MODEL_NAME)),
       "my-model",
+    );
+    await waitFor(() =>
+      fireEvent.submit(screen.getByTestId(TestId.ADD_MODEL_FORM)),
+    );
+
+    await waitFor(() => {
+      expect(
+        actions.find((dispatch) => dispatch.type === addModelAction.type),
+      ).toMatchObject(addModelAction);
+    });
+  });
+
+  it("disables commands on selection after successful model creation", async () => {
+    const [store, actions] = createStore(state, { trackActions: true });
+    renderComponent(<AddModel />, { store });
+
+    const addModelAction = jujuActions.addModel({
+      cloudTag: "cloud-aws",
+      credential: "",
+      modelName: "my-model",
+      userTag: "user-eggman@external",
+      wsControllerURL: "wss://controller.example.com",
+      disabledCommands: DisableType.DESTROY_MODEL,
+    });
+
+    await userEvent.type(
+      screen.getByLabelText(new RegExp(MandatoryDetailsLabel.MODEL_NAME)),
+      "my-model",
+    );
+    await userEvent.click(
+      screen.getByRole("button", { name: Label.NEXT_BUTTON }),
+    );
+    await userEvent.click(
+      screen.getByRole("radio", {
+        name: ConfigsConstraintsLabel.DISABLE_DESTROY_MODEL,
+      }),
     );
     await waitFor(() =>
       fireEvent.submit(screen.getByTestId(TestId.ADD_MODEL_FORM)),

@@ -16,6 +16,8 @@ import type {
   VersionElem,
 } from "juju/jimm/JIMMV4";
 import type { FullStatusWithAnnotations, ModelInfo } from "juju/types";
+import type { DisableType } from "pages/AddModel/ConfigsConstraints/types";
+import type { ProcessOutcome } from "store/middleware/process";
 import type { GenericItemsState, GenericState } from "store/types";
 
 /**
@@ -147,6 +149,7 @@ export type AddModel = {
   credential: string;
   cloudTag: string;
   userTag: string;
+  disabledCommands: DisableType;
   region?: string;
 };
 
@@ -156,6 +159,14 @@ export type AddModelState = {
   errors?: string | unknown;
   success?: boolean;
 };
+
+export type BlockEntry = {
+  running: boolean;
+  status: "initiated" | "pending" | null;
+  outcome: null | ProcessOutcome<void>;
+};
+
+export type BlockState = Record<string, BlockEntry>;
 
 export type JujuState = {
   auditEvents: AuditEventsState;
@@ -179,4 +190,5 @@ export type JujuState = {
   selectedApplications: Record<string, ApplicationStatus>;
   supportedJujuVersions: SupportedJujuVersionsState;
   addModelState: AddModelState;
+  blockState: BlockState;
 };
