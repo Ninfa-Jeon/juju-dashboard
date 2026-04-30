@@ -23,7 +23,7 @@ describe("AccessManagement", () => {
     await userEvent.type(input, "test@example.com");
 
     expect(
-      screen.getByRole("button", { name: "test@example.com" }),
+      screen.getByRole("button", { name: /test@example.com/i }),
     ).toBeInTheDocument();
   });
 
@@ -38,13 +38,13 @@ describe("AccessManagement", () => {
 
     await userEvent.type(input, "test@example.com");
     expect(
-      screen.getByRole("button", { name: "test@example.com" }),
+      screen.getByRole("button", { name: /test@example.com/i }),
     ).toBeInTheDocument();
 
     await userEvent.clear(input);
 
     expect(
-      screen.queryByRole("button", { name: "test@example.com" }),
+      screen.queryByRole("button", { name: /test@example.com/i }),
     ).not.toBeInTheDocument();
   });
 
@@ -75,7 +75,7 @@ describe("AccessManagement", () => {
 
     await userEvent.type(input, "newuser@example.com");
     await userEvent.click(
-      screen.getByRole("button", { name: "newuser@example.com" }),
+      screen.getByRole("button", { name: /newuser@example.com/i }),
     );
 
     const adminButtons = screen.getAllByRole("button", { name: "Admin" });
@@ -93,7 +93,7 @@ describe("AccessManagement", () => {
 
     await userEvent.type(input, "test@example.com");
     await userEvent.click(
-      screen.getByRole("button", { name: "test@example.com" }),
+      screen.getByRole("button", { name: /test@example.com/i }),
     );
 
     const adminButtons = screen.getAllByRole("button", { name: "Admin" });
@@ -114,7 +114,7 @@ describe("AccessManagement", () => {
 
     await userEvent.type(input, "first@example.com");
     await userEvent.click(
-      screen.getByRole("button", { name: "first@example.com" }),
+      screen.getByRole("button", { name: /first@example.com/i }),
     );
 
     const initialAdminButtons = screen.getAllByRole("button", {
@@ -126,7 +126,7 @@ describe("AccessManagement", () => {
 
     await userEvent.type(input, "second@example.com");
     await userEvent.click(
-      screen.getByRole("button", { name: "second@example.com" }),
+      screen.getByRole("button", { name: /second@example.com/i }),
     );
 
     expect(screen.getByRole("button", { name: "Read" })).toBeInTheDocument();

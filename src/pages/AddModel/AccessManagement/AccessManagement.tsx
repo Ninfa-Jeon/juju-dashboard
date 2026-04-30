@@ -34,7 +34,7 @@ const AccessManagement = (): JSX.Element => {
   const shareModelWith = values.shareModelWith ?? {};
   const activeUserValue = activeUserName || "active-user";
   const ACTIVE_USER: AccessUserItem = {
-    label: `${activeUserName || "username"} (you)`,
+    label: activeUserName,
     value: activeUserValue,
     access: shareModelWith[activeUserName] ?? AccessLevel.ADMIN,
   };
@@ -91,28 +91,30 @@ const AccessManagement = (): JSX.Element => {
       <div className="row u-no-padding">
         <div className="col-4">
           <MultiSelect
-            id="access-management-users"
             variant="search"
             placeholder="Search and add users"
             label="Add users"
             emptyMessage="No users found"
             dropdownFooter={
               <div className="access-management__dropdown-footer">
-                <h4 className="p-muted-heading u-no-padding--top p-text--small">
+                <h4 className="p-muted-heading u-no-padding--top p-text--small u-no-margin--bottom">
                   YOU CAN ADD
                 </h4>
                 {trimmedSearchInput && !hasExactSelectedMatch ? (
                   <Button
                     appearance="base"
                     type="button"
-                    className="u-align--left"
+                    className="u-align--left u-no-padding u-no-margin--bottom"
                     onClick={handleAddUser}
                   >
                     <Icon name="plus" />
                     {trimmedSearchInput}
+                    <p className="p-form-help-text email-help-text">
+                      Make sure the email format is correct
+                    </p>
                   </Button>
                 ) : (
-                  <p className="p-form-help-text add-users">
+                  <p className="p-form-help-text u-no-margin--bottom u-sv1">
                     Add users by entering an email address
                   </p>
                 )}
@@ -131,36 +133,41 @@ const AccessManagement = (): JSX.Element => {
       </div>
       <table className="u-no-margin--bottom">
         <thead>
-          <tr className="u-flex">
-            <th className="u-no-margin--bottom u-sv2--top access-management__user-col">
+          <tr className="u-flex u-sv2--top">
+            <th className="u-no-margin--bottom access-management__user-col">
               User Name
             </th>
-            <th className="u-no-margin--bottom u-sv2--top access-management__access-col">
+            <th className="u-no-margin--bottom access-management__access-col">
               Access Level
             </th>
-            <th className="u-no-margin--bottom u-sv2--top u-flex-shrink"></th>
+            <th className="u-no-margin--bottom u-sh2 u-flex-shrink p-table__cell--icon-placeholder" />
           </tr>
         </thead>
         <tbody>
           {selectedItems.map(
             ({ label: userLabel, value: userValue }, index) => (
-              <tr key={String(userValue)} className="u-flex">
+              <tr key={userValue} className="u-flex user-row">
                 <td className="access-management__user-col">
                   <span className="u-sh1--right u-truncate" title={userLabel}>
-                    {userLabel}
+                    {userLabel === activeUserName ? (
+                      <>
+                        <b>{`${userLabel}`}</b> (you)
+                      </>
+                    ) : (
+                      userLabel
+                    )}
                   </span>
                 </td>
                 <td className="controller-select__cell access-management__access-col">
                   <CustomSelect
-                    id={`access-level-${String(userValue)}`}
+                    id={`access-level-${userValue}`}
                     defaultToggleLabel="Admin"
                     toggleClassName="controller-select__toggle"
                     dropdownClassName="controller-select__dropdown prevent-panel-close"
                     value={
                       userValue === ACTIVE_USER.value
                         ? ACTIVE_USER.access
-                        : (shareModelWith[String(userValue)] ??
-                          AccessLevel.ADMIN)
+                        : (shareModelWith[userValue] ?? AccessLevel.ADMIN)
                     }
                     // This will be enabled once we understand the flow for it
                     disabled={index === 0}

@@ -34,3 +34,8 @@
     }
   }
 }
+
+// The multi-select component has a border on the footer by default, but in our use case it doesn't fit the design, so we remove it here.
+.multi-select__footer {
+  border: none;
+}

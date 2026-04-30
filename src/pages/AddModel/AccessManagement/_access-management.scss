@@ -1,29 +1,11 @@
-.multi-select__input {
-  margin-bottom: 0;
-  margin-top: $spv--medium;
-}
-
-.multi-select__footer {
-  border: none;
-  padding: 0;
-}
-
 .access-management__dropdown-footer {
   display: flex;
   flex-direction: column;
+  gap: $spv--small;
   width: 100%;
 
-  h4 {
-    padding: 0 $spv--large;
-  }
-
-  .add-users {
-    padding: 0 $spv--large;
-  }
-
-  button {
-    margin-bottom: $spv--small;
-    padding: 0 $spv--large;
+  .email-help-text {
+    margin: 0 0 $spv--small $spv--x-large;
   }
 
   .p-icon--plus {
@@ -31,15 +13,10 @@
   }
 }
 
-.multi-select__dropdown {
-  .no-users {
-    margin: $spv--medium $spv--large;
-  }
-}
-
 .access-management {
-  table {
-    width: 100%;
+  .multi-select__input {
+    margin-bottom: 0;
+    margin-top: $spv--medium;
   }
 
   .access-management__user-col {
@@ -53,7 +30,7 @@
     min-width: 22rem;
   }
 
-  tr:last-child {
+  .user-row:last-child {
     border-bottom: 1px solid $colors--theme--border-low-contrast;
   }
 }
