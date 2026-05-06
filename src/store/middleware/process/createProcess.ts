@@ -45,7 +45,10 @@ export function createProcess<Payload, Status, Result>(
         return true;
       } else {
         // Status update.
-        dispatch(processActions.setStatus(payload, result.value));
+        const action = processActions.setStatus?.(payload, result.value);
+        if (action) {
+          dispatch(action);
+        }
         return false;
       }
     }
@@ -74,6 +77,9 @@ export function createProcess<Payload, Status, Result>(
 
     // Mark process as not running.
     dispatch(processActions.setRunning(payload, false));
+
+    // Call any callback function.
+    hooks?.after?.(payload, dispatch);
   };
 
   return { actions, start };
