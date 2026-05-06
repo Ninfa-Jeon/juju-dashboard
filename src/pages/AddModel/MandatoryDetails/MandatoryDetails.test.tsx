@@ -75,7 +75,9 @@ describe("MandatoryDetails", () => {
     expect(screen.getByLabelText(new RegExp(Label.MODEL_NAME))).toHaveValue("");
     expect(screen.getByLabelText(Label.CLOUD)).toHaveValue("cloud-aws");
     expect(screen.getByLabelText(Label.REGION)).toHaveValue("");
-    expect(screen.getByLabelText(Label.CREDENTIAL)).toHaveValue("aws-cred");
+    expect(screen.getByLabelText(Label.CREDENTIAL)).toHaveValue(
+      "cloudcred-aws_admin_aws-cred",
+    );
   });
 
   it("renders saved form values", () => {
@@ -85,7 +87,7 @@ describe("MandatoryDetails", () => {
           modelName: "my-model",
           cloud: "cloud-gce",
           region: "europe-west1",
-          credential: "gce-cred",
+          credential: "cloudcred-gce_user_gce-cred",
         }}
         onSubmit={vi.fn()}
       >
@@ -98,7 +100,39 @@ describe("MandatoryDetails", () => {
     );
     expect(screen.getByLabelText(Label.CLOUD)).toHaveValue("cloud-gce");
     expect(screen.getByLabelText(Label.REGION)).toHaveValue("europe-west1");
-    expect(screen.getByLabelText(Label.CREDENTIAL)).toHaveValue("gce-cred");
+    expect(screen.getByLabelText(Label.CREDENTIAL)).toHaveValue(
+      "cloudcred-gce_user_gce-cred",
+    );
+  });
+
+  it("does not overwrite an existing credential", () => {
+    state.juju.userCredentials = userCredentialsStateFactory.build({
+      credentials: {
+        "cloud-aws": [
+          "cloudcred-aws_admin_aws-cred",
+          "cloudcred-aws_user_secondary-cred",
+        ],
+      },
+    });
+
+    renderComponent(
+      <Formik
+        initialValues={{
+          modelName: "",
+          cloud: "cloud-aws",
+          region: "",
+          credential: "cloudcred-aws_user_secondary-cred",
+        }}
+        onSubmit={vi.fn()}
+      >
+        <MandatoryDetails />
+      </Formik>,
+      { state },
+    );
+
+    expect(screen.getByLabelText(Label.CREDENTIAL)).toHaveValue(
+      "cloudcred-aws_user_secondary-cred",
+    );
   });
 
   it("fetches credentials on initial load when cloud is set", async () => {
@@ -146,7 +180,7 @@ describe("MandatoryDetails", () => {
           modelName: "my-model",
           cloud: "cloud-gce",
           region: "europe-west1",
-          credential: "gce-cred",
+          credential: "cloudcred-gce_user_gce-cred",
         }}
         onSubmit={vi.fn()}
       >
@@ -185,7 +219,7 @@ describe("MandatoryDetails", () => {
           modelName: "my-model",
           cloud: "cloud-gce",
           region: "europe-west1",
-          credential: "gce-cred",
+          credential: "cloudcred-gce_user_gce-cred",
         }}
         onSubmit={vi.fn()}
       >
@@ -217,7 +251,7 @@ describe("MandatoryDetails", () => {
           modelName: "my-model",
           cloud: "cloud-gce",
           region: "europe-west1",
-          credential: "gce-cred",
+          credential: "cloudcred-gce_user_gce-cred",
         }}
         onSubmit={vi.fn()}
       >
@@ -234,6 +268,8 @@ describe("MandatoryDetails", () => {
       "cloud-aws",
     );
     expect(screen.getByLabelText(Label.REGION)).toHaveValue("");
-    expect(screen.getByLabelText(Label.CREDENTIAL)).toHaveValue("aws-cred");
+    expect(screen.getByLabelText(Label.CREDENTIAL)).toHaveValue(
+      "cloudcred-aws_admin_aws-cred",
+    );
   });
 });
