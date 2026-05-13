@@ -15,6 +15,7 @@ export type AppTab = "machines" | "units";
 export type ModelsGroupedBy = "cloud" | "owner" | "status";
 
 const urls = {
+  bootstrap: "/bootstrap",
   index: "/",
   controllers: "/controllers",
   model: {

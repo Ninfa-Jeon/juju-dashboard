@@ -3,7 +3,6 @@ import {
   Strip,
 } from "@canonical/react-components";
 import * as Sentry from "@sentry/react";
-import type { LogLevelDesc } from "loglevel";
 import { StrictMode } from "react";
 import type { Root } from "react-dom/client";
 import { createRoot } from "react-dom/client";
@@ -71,21 +70,15 @@ const getRoot = (): Root | void => {
 };
 
 function bootstrap(): void {
-  const config = window.jujuDashboardConfig;
-  const isProduction = import.meta.env.PROD;
-  const logLevel: LogLevelDesc = isProduction
-    ? logger.levels.SILENT
-    : logger.levels.TRACE;
-
-  logger.setDefaultLevel(logLevel);
+  const config = window.jujuDashboardConfig ?? undefined;
 
   let error: null | string = null;
   if (!config) {
     error = Label.NO_CONFIG;
   }
-  const controllerEndpointError = getControllerAPIEndpointErrors(
-    config?.controllerAPIEndpoint,
-  );
+  const controllerEndpointError = config?.bootstrapMode
+    ? null
+    : getControllerAPIEndpointErrors(config?.controllerAPIEndpoint);
   error = error ?? controllerEndpointError;
   if (error || !config) {
     getRoot()?.render(
@@ -116,8 +109,10 @@ function bootstrap(): void {
   reduxStore.dispatch(generalActions.storeConfig(config));
   reduxStore.dispatch(generalActions.storeVersion(appVersion));
 
-  initialiseAuthFromConfig(config, reduxStore.dispatch);
-  void Auth.instance.bootstrap();
+  if (!config.bootstrapMode) {
+    initialiseAuthFromConfig(config, reduxStore.dispatch);
+    void Auth.instance.bootstrap();
+  }
 
   getRoot()?.render(
     <Provider store={reduxStore}>

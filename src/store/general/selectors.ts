@@ -17,6 +17,11 @@ export const getConfig = createSelector(
   (sliceState) => sliceState.config,
 );
 
+export const getBootstrapMode = createSelector(
+  [getConfig],
+  (config) => !!config?.bootstrapMode,
+);
+
 /**
   Determines if Juju is used based on config value from state.
   @param state The application state.

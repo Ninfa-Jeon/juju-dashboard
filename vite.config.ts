@@ -36,13 +36,13 @@ export default defineConfig(({ mode }) => {
       process.env.NODE_ENV === "development"
         ? null
         : // The template format is handled by the dev and jaas configs when in development.
-        createHtmlPlugin({
-          inject: {
-            data: {
-              injectScript: "",
+          createHtmlPlugin({
+            inject: {
+              data: {
+                injectScript: "",
+              },
             },
-          },
-        }),
+          }),
       {
         // Remove config files that are used for development.
         name: "delete-configs",
@@ -66,6 +66,12 @@ export default defineConfig(({ mode }) => {
       allowedHosts: true,
       host: "0.0.0.0",
       port: Number(env.PORT),
+      proxy: {
+        "/bootstrap": {
+          target: "http://192.168.2.15:17070",
+          changeOrigin: true,
+        },
+      },
     },
     test: {
       coverage: {

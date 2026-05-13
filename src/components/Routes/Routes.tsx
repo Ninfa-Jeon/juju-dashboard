@@ -5,6 +5,7 @@ import Login from "components/LogIn";
 import BaseLayout from "layout/BaseLayout";
 import AddModel from "pages/AddModel";
 import AdvancedSearch from "pages/AdvancedSearch";
+import Bootstrap from "pages/Bootstrap";
 import ControllersIndex from "pages/ControllersIndex";
 import Logs from "pages/Logs";
 import ModelDetails from "pages/ModelDetails";
@@ -15,9 +16,43 @@ import { getConfig, getIsJuju } from "store/general/selectors";
 import { useAppSelector } from "store/store";
 import urls from "urls";
 
+const BOOTSTRAP_MODE_QUERY_KEY = "bootstrapMode";
+const isBootstrapModeFromURL = (): boolean => {
+  if (typeof window === "undefined") {
+    return false;
+  }
+  const params = new URLSearchParams(window.location.search);
+  return params.get(BOOTSTRAP_MODE_QUERY_KEY) === "true";
+};
+
 export function Routes(): JSX.Element {
   const config = useAppSelector(getConfig);
   const isJuju = useAppSelector(getIsJuju);
+
+  // Check URL params directly — avoids race condition with Redux store
+  // propagation where useAppSelector(getBootstrapMode) returns undefined
+  // on the first render.
+  if (isBootstrapModeFromURL()) {
+    const bootstrapRouter = createBrowserRouter(
+      [
+        {
+          path: "/",
+          element: <Bootstrap />,
+        },
+        {
+          path: urls.bootstrap,
+          element: <Bootstrap />,
+        },
+        {
+          path: "*",
+          element: <Navigate to={urls.bootstrap} replace />,
+        },
+      ],
+      { basename: config?.baseAppURL },
+    );
+
+    return <RouterProvider router={bootstrapRouter} />;
+  }
 
   const authenticatedRoutes = [
     {

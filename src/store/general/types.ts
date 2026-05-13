@@ -3,6 +3,9 @@ import type { ConnectionInfo } from "@canonical/jujulib";
 export type Config = {
   analyticsEnabled: boolean;
   baseAppURL: string;
+  bootstrapMode?: boolean;
+  bridgeBaseURL?: string;
+  bridgeToken?: string;
   controllerAPIEndpoint: string;
   identityProviderURL: string;
   isJuju: boolean;

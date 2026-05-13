@@ -32,6 +32,89 @@ if (
   }
 }
 
+// Bootstrap mode: check URL params at store creation time so the first
+// render already has the correct state. This avoids a race condition where
+// dispatching the config after render causes Routes() to read stale state.
+const BOOTSTRAP_MODE_QUERY_KEY = "bootstrapMode";
+const isBootstrapModeFromLocation = (): boolean => {
+  if (typeof window === "undefined") {
+    return false;
+  }
+  const params = new URLSearchParams(window.location.search);
+  return params.get(BOOTSTRAP_MODE_QUERY_KEY) === "true";
+};
+
+if (isBootstrapModeFromLocation()) {
+  const params = new URLSearchParams(window.location.search);
+  const bridgeBaseURL = params.get("bridgeBaseURL") ?? undefined;
+  const bridgeToken = params.get("bridgeToken") ?? undefined;
+  preloadedState = {
+    general: {
+      appVersion: null,
+      config: {
+        analyticsEnabled: false,
+        baseAppURL: "/",
+        bootstrapMode: true,
+        bridgeBaseURL,
+        bridgeToken,
+        controllerAPIEndpoint: "",
+        identityProviderURL: "",
+        isJuju: true,
+      },
+      connectionError: null,
+      controllerConnections: null,
+      controllerFeatures: null,
+      credentials: null,
+      login: null,
+      pingerIntervalIds: null,
+      visitURLs: null,
+    },
+    juju: {
+      auditEvents: {
+        items: [],
+        loading: false,
+        loaded: false,
+        errors: null,
+        limit: 20,
+      },
+      crossModelQuery: {
+        results: null,
+        loading: false,
+        loaded: false,
+        errors: null,
+      },
+      secrets: {},
+      cloudInfo: { clouds: null, loading: false, loaded: false, errors: null },
+      userCredentials: {
+        items: null,
+        loading: false,
+        loaded: false,
+        errors: null,
+      },
+      models: {},
+      modelsError: null,
+      modelData: null,
+      controllers: {},
+      addModel: { loading: false, loaded: false, success: false, errors: null },
+      migrationTargets: {
+        items: null,
+        loading: false,
+        loaded: false,
+        errors: null,
+      },
+      supportedVersions: {
+        items: null,
+        loading: false,
+        loaded: false,
+        errors: null,
+      },
+      rebacAllowed: {},
+      rebacRelationships: {},
+      checkRelationsErrors: {},
+    },
+  };
+}
+
 const store = configureStore({
   // Order of the middleware is important
   middleware: (getDefaultMiddleware) => {
