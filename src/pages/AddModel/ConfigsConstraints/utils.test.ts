@@ -1,3 +1,4 @@
+import { YAMLErrorType } from "./YAMLErrorsModal/types";
 import type { CategoryDefinition } from "./types";
 import {
   buildConfigsConstraintsPayload,
@@ -6,6 +7,7 @@ import {
   getChangedFields,
   getCategoriesWithVisibleFields,
   getConfigInitialValues,
+  getYAMLErrorMessage,
   isConfigChanged,
   validateAndParseYAML,
 } from "./utils";
@@ -548,6 +550,35 @@ describe("utils", () => {
       expect(validValues["logging-config"]).toBe("debug");
       // default-space was changed but absent from YAML — should reset to default
       expect(validValues["default-space"]).toBe("alpha");
+    });
+  });
+
+  describe("getYAMLErrorMessage", () => {
+    it("returns an invalid format message with the given context", () => {
+      expect(
+        getYAMLErrorMessage(YAMLErrorType.OTHERS, { context: "Error context" }),
+      ).toBe("Invalid format. Error context");
+    });
+
+    it("returns an unknown key message with the given key", () => {
+      expect(
+        getYAMLErrorMessage(YAMLErrorType.UNKNOWN_KEYS, { key: "bad-key" }),
+      ).toBe("Unknown key: bad-key");
+    });
+
+    it("returns an invalid value message", () => {
+      expect(
+        getYAMLErrorMessage(YAMLErrorType.INVALID_VALUES, { key: "my-field" }),
+      ).toBe("Invalid value for my-field");
+    });
+
+    it("returns an invalid value message with expected value", () => {
+      expect(
+        getYAMLErrorMessage(YAMLErrorType.INVALID_VALUES, {
+          key: "my-field",
+          expectedValue: "a number",
+        }),
+      ).toBe("Invalid value for my-field. Expected a number");
     });
   });
 });
