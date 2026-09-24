@@ -315,6 +315,7 @@ const slice = createSlice({
             errors: null,
             loaded: false,
             modelName,
+            totalCount: action.payload.models.length,
           }),
       );
     },
@@ -356,11 +357,13 @@ const slice = createSlice({
       state,
       action: PayloadAction<
         {
-          modelUUID: string;
+          modelUUIDs: string[];
         } & WsControllerURLParam
       >,
     ) => {
-      delete state.destroyModel[action.payload.modelUUID];
+      action.payload.modelUUIDs.forEach(
+        (modelUUID) => delete state.destroyModel[modelUUID],
+      );
     },
     selectModelsForDestruction: (
       state,

@@ -24,7 +24,9 @@ export default function useModelDestructionToaster(): void {
     Object.entries(destructionState).forEach(
       ([modelUUID, destructionStatus]) => {
         // Check if the destruction is in a loading state.
-        if (destructionStatus.loading) {
+        // Bulk destructions (totalCount > 1) fire their own grouped toasts
+        // via the poller and notifications middleware — skip them here.
+        if (destructionStatus.loading && destructionStatus.totalCount === 1) {
           // Handle an initiated destruction
           const toastId = `destroy-loading-${modelUUID}`;
           if (!shownToastIds.current.includes(toastId)) {
@@ -37,7 +39,8 @@ export default function useModelDestructionToaster(): void {
         } else if (
           wsControllerURL &&
           destructionStatus.loaded &&
-          destructionStatus.errors === null
+          destructionStatus.errors === null &&
+          destructionStatus.totalCount === 1
         ) {
           // Handle a successful destruction (model is no longer in modelsList)
           const toastId = `destroy-success-${modelUUID}`;
@@ -56,7 +59,7 @@ export default function useModelDestructionToaster(): void {
           // Dispatch the clear action to remove this entry from the state.
           dispatch(
             jujuActions.clearDestroyedModel({
-              modelUUID,
+              modelUUIDs: [modelUUID],
               wsControllerURL,
             }),
           );
@@ -90,7 +93,7 @@ export default function useModelDestructionToaster(): void {
           // Dispatch the clear action to remove this entry from the state.
           dispatch(
             jujuActions.clearDestroyedModel({
-              modelUUID,
+              modelUUIDs: [modelUUID],
               wsControllerURL,
             }),
           );

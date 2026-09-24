@@ -48,6 +48,7 @@ describe("useModelDestructionToaster", () => {
         destroyModel: {
           xyz456: {
             modelName: "enterprise",
+            totalCount: 1,
             errors: null,
             loaded: false,
             loading: false,
@@ -64,6 +65,7 @@ describe("useModelDestructionToaster", () => {
   it("shows an info toast when destruction is loading", async () => {
     state.juju.destroyModel.xyz456 = {
       modelName: "enterprise",
+      totalCount: 1,
       errors: null,
       loaded: false,
       loading: true,
@@ -82,6 +84,7 @@ describe("useModelDestructionToaster", () => {
   it("does not show duplicate loading toasts on re-render", async () => {
     state.juju.destroyModel.xyz456 = {
       modelName: "enterprise",
+      totalCount: 1,
       errors: null,
       loaded: false,
       loading: true,
@@ -97,6 +100,7 @@ describe("useModelDestructionToaster", () => {
   it("shows a negative toast and dispatches clear and invalidate actions on failure", async () => {
     state.juju.destroyModel.xyz456 = {
       modelName: "enterprise",
+      totalCount: 1,
       errors: "Permission denied",
       loaded: false,
       loading: false,
@@ -105,7 +109,7 @@ describe("useModelDestructionToaster", () => {
     renderComponent(<TestComponent />, { state, store });
 
     const clearAction = jujuActions.clearDestroyedModel({
-      modelUUID: "xyz456",
+      modelUUIDs: ["xyz456"],
       wsControllerURL: "wss://example.com:17070/api",
     });
     const invalidateAction = modelListSource.actions.invalidate({
@@ -137,6 +141,7 @@ describe("useModelDestructionToaster", () => {
   it("shows a positive toast and dispatches clear and invalidate actions on success", async () => {
     state.juju.destroyModel.xyz456 = {
       modelName: "enterprise",
+      totalCount: 1,
       errors: null,
       loaded: true,
       loading: false,
@@ -145,7 +150,7 @@ describe("useModelDestructionToaster", () => {
     renderComponent(<TestComponent />, { state, store });
 
     const clearAction = jujuActions.clearDestroyedModel({
-      modelUUID: "xyz456",
+      modelUUIDs: ["xyz456"],
       wsControllerURL: "wss://example.com:17070/api",
     });
     const invalidateAction = modelListSource.actions.invalidate({

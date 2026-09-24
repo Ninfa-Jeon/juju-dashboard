@@ -424,7 +424,7 @@ describe("reducers", () => {
       reducer(
         state,
         actions.clearDestroyedModel({
-          modelUUID: "abc123",
+          modelUUIDs: ["abc123"],
           wsControllerURL: "wss://example.com",
         }),
       ),
