@@ -255,20 +255,22 @@ export const extractCloudName = (tag = ""): string => {
 /**
   Returns credential string from Tag
   @param cloudTag The cloudTag identifier returns from the API
-  @returns The simplified cloud string
+  @returns The split contents of a credential tag (cloud, user and credential)
 */
-export const extractCredentialName = (tag: null | string = null): string => {
+export const extractCredentialName = (tag: null | string = null): string[] => {
   // @ is not there in local bootstraps
   // cloudcred-localhost_admin_localhost
   if (!tag) {
-    return "-";
+    return ["-", "-", "-"];
   }
-  const [_tag, cred] = tag.split("cloudcred-");
-  if (cred.indexOf("@") > -1) {
-    return cred.split("@")[1].split("_")[1];
-  }
-  return cred.split("_")[2];
+  const credential = tag.split("cloudcred-").at(-1) ?? tag;
+  return credential.split("_");
 };
+
+export const getCredentialContentsKey = (
+  cloud: string,
+  credentialName: string,
+): string => JSON.stringify([cloud, credentialName]);
 
 /**
   Returns the version of the supplied charm string.

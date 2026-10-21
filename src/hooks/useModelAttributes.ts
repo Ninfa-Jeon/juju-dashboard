@@ -43,7 +43,7 @@ export default function useModelAttributes(modelData: ModelDataList | null): {
       }
 
       // Extract credential filters
-      const credentialFilter = extractCredentialName(
+      const [, , credentialFilter] = extractCredentialName(
         model.info["cloud-credential-tag"],
       );
       if (!credentials.includes(credentialFilter)) {

@@ -50,6 +50,7 @@ import type { Filters } from "./utils/models";
 import {
   extractCloudName,
   extractCredentialName,
+  getCredentialContentsKey,
   extractOwnerName,
   getApplicationStatusGroup,
   getMachineStatusGroup,
@@ -204,9 +205,38 @@ export const getCloudInfoState = createSelector(
   (sliceState) => sliceState.cloudInfo,
 );
 
+export const getCloudTags = createSelector([getCloudInfoState], (cloudInfo) =>
+  Object.keys(cloudInfo.clouds ?? {}),
+);
+
 export const getUserCredentialsState = createSelector(
   [slice],
   (sliceState) => sliceState.userCredentials,
+);
+
+export const getCredentialContentsState = createSelector(
+  [slice],
+  (sliceState) => sliceState.credentialContents,
+);
+
+export const getCredentialTags = createSelector(
+  [getUserCredentialsState],
+  (userCredentials) => Object.values(userCredentials.credentials).flat(),
+);
+
+export const getCredentialsWithContents = createSelector(
+  [getCredentialTags, getCredentialContentsState],
+  (credentialTags, credentialContents) =>
+    credentialTags.map((credential) => {
+      const [cloud, , name] = extractCredentialName(credential);
+      return {
+        credential,
+        cloud,
+        name,
+        contents:
+          credentialContents.contents[getCredentialContentsKey(cloud, name)],
+      };
+    }),
 );
 
 export const getModelSecretsState = createSelector(
@@ -496,7 +526,7 @@ export const getActiveUser = createSelector(
 
 export const getModelCredential = createSelector(
   [getModelDataByUUID],
-  (model) => extractCredentialName(model?.info?.["cloud-credential-tag"]),
+  (model) => extractCredentialName(model?.info?.["cloud-credential-tag"])[2],
 );
 
 export const getModelAccess = createSelector(
@@ -729,7 +759,7 @@ export const getFilteredModelData = createSelector(
         "model" in data ? extractCloudName(data.model["cloud-tag"]) : null;
       const credential =
         "info" in data
-          ? extractCredentialName(data.info?.["cloud-credential-tag"])
+          ? extractCredentialName(data.info?.["cloud-credential-tag"])[2]
           : null;
       const region = "model" in data ? data.model.region : null;
       const owner = data.info

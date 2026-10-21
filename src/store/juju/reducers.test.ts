@@ -2128,7 +2128,7 @@ describe("reducers", () => {
         const result = reducer(
           state,
           actions.updateUserCredentials({
-            cloudTag: "cloud-aws",
+            cloudTags: ["cloud-aws"],
             update: {
               data: { "cloud-aws": ["credential-1", "credential-2"] },
             },
@@ -2145,7 +2145,7 @@ describe("reducers", () => {
         const result = reducer(
           state,
           actions.updateUserCredentials({
-            cloudTag: "cloud-aws",
+            cloudTags: ["cloud-aws"],
             update: {
               loading: true,
             },
@@ -2162,7 +2162,7 @@ describe("reducers", () => {
         const result = reducer(
           state,
           actions.updateUserCredentials({
-            cloudTag: "cloud-aws",
+            cloudTags: ["cloud-aws"],
             update: {
               error: {
                 message: "Something went wrong",
@@ -2193,7 +2193,7 @@ describe("reducers", () => {
       const result = reducer(
         state,
         actions.updateUserCredentials({
-          cloudTag: "cloud-gce",
+          cloudTags: ["cloud-gce"],
           update: {
             data: { "cloud-gce": ["credential-a", "credential-b"] },
           },

@@ -41,7 +41,7 @@ const toCredentialOptions = (
   credentials: string[],
 ): OptionHTMLAttributes<HTMLOptionElement>[] =>
   credentials.map((credential) => {
-    const credentialName = extractCredentialName(credential);
+    const [, , credentialName] = extractCredentialName(credential);
     return {
       label: credentialName,
       value: credential,
@@ -106,7 +106,7 @@ const MandatoryDetails = (): JSX.Element => {
       dispatch(
         userCredentialsMiddleware.actions.start({
           wsControllerURL,
-          cloudTag: selectedCloud,
+          cloudTags: [selectedCloud],
         }),
       );
     }
@@ -115,7 +115,7 @@ const MandatoryDetails = (): JSX.Element => {
         dispatch(
           userCredentialsMiddleware.actions.stop({
             wsControllerURL,
-            cloudTag: selectedCloud,
+            cloudTags: [selectedCloud],
           }),
         );
       }
