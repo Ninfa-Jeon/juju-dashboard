@@ -106,7 +106,7 @@ const MandatoryDetails = (): JSX.Element => {
       dispatch(
         userCredentialsMiddleware.actions.start({
           wsControllerURL,
-          cloudTag: selectedCloud,
+          cloudTags: [selectedCloud],
         }),
       );
     }
@@ -115,7 +115,7 @@ const MandatoryDetails = (): JSX.Element => {
         dispatch(
           userCredentialsMiddleware.actions.stop({
             wsControllerURL,
-            cloudTag: selectedCloud,
+            cloudTags: [selectedCloud],
           }),
         );
       }

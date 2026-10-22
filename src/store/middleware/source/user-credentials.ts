@@ -12,9 +12,10 @@ export const NO_CLOUD_FACADE =
 
 export async function getUserCredentials(
   connection: ConnectionWithFacades,
-  cloudTag: string,
-): Promise<string[]> {
-  if (!connection.info.user?.identity) {
+  cloudTags: string[],
+): Promise<Record<string, string[]>> {
+  const userTag = connection.info.user?.identity;
+  if (!userTag) {
     throw new Error(NOT_AUTHENTICATED_ERROR);
   }
   if (!connection.facades.cloud) {
@@ -22,22 +23,26 @@ export async function getUserCredentials(
   }
 
   const response = await connection.facades.cloud?.userCredentials({
-    "user-clouds": [
-      {
-        "cloud-tag": cloudTag,
-        "user-tag": connection.info.user.identity,
-      },
-    ],
+    "user-clouds": cloudTags.map((cloudTag) => ({
+      "cloud-tag": cloudTag,
+      "user-tag": userTag,
+    })),
   });
-  return response?.results[0]?.result ?? [];
+
+  const results = response?.results ?? [];
+  const credentials: Record<string, string[]> = {};
+  cloudTags.forEach((tag, i) => {
+    credentials[tag] = results[i]?.result ?? [];
+  });
+  return credentials;
 }
 
 export default createSourceInstance<
-  { wsControllerURL: string; cloudTag: string },
-  string[]
+  { wsControllerURL: string; cloudTags: string[] },
+  Record<string, string[]>
 >(
   "user-credentials",
-  ({ wsControllerURL: _, cloudTag, meta }) => {
+  ({ wsControllerURL: _, cloudTags, meta }) => {
     if (!hasConnections(meta, ["wsControllerURL"])) {
       throw new Error("connection not provided");
     }
@@ -45,26 +50,20 @@ export default createSourceInstance<
     const connection = meta.connections.wsControllerURL;
 
     return createPollingSource(
-      async () => getUserCredentials(connection, cloudTag),
+      async () => getUserCredentials(connection, cloudTags),
       { interval: { seconds: 30 } },
     );
   },
   {
-    setData: ({ cloudTag }, data) =>
+    setData: ({ cloudTags }, data) =>
+      jujuActions.updateUserCredentials({ cloudTags, update: { data } }),
+    setError: ({ cloudTags }, error) =>
       jujuActions.updateUserCredentials({
-        cloudTag,
-        update: { data: { [cloudTag]: data } },
-      }),
-    setError: ({ cloudTag }, error) =>
-      jujuActions.updateUserCredentials({
-        cloudTag,
+        cloudTags,
         update: { error: toSerializableSourceError(error) },
       }),
-    setLoading: ({ cloudTag }, loading) =>
-      jujuActions.updateUserCredentials({
-        cloudTag,
-        update: { loading },
-      }),
+    setLoading: ({ cloudTags }, loading) =>
+      jujuActions.updateUserCredentials({ cloudTags, update: { loading } }),
   },
   {
     addActionMeta: (_payload) => ({ withConnection: true }),

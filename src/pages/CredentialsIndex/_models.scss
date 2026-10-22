@@ -1,0 +1,45 @@
+.models {
+  &__header {
+    display: flex;
+    justify-content: space-between;
+  }
+
+  &__controls {
+    display: grid;
+    flex-wrap: wrap;
+    gap: 0;
+    grid-template-columns: 1fr;
+    white-space: nowrap;
+
+    .p-segmented-control {
+      display: inline-block;
+    }
+
+    @media (min-width: $breakpoint-large) {
+      display: flex;
+      gap: $sp-unit;
+      justify-content: space-between;
+
+      .p-search-and-filter {
+        min-width: 745px;
+      }
+    }
+
+    @include mobile-and-medium {
+      .p-segmented-control {
+        display: flex;
+        flex-direction: column;
+      }
+    }
+  }
+
+  &__content {
+    padding-top: 0 !important;
+  }
+
+  // Tooltips override
+  .p-tooltip--top-center .p-tooltip__message {
+    left: calc(50% - 0.875rem);
+    margin-bottom: -0.5rem;
+  }
+}

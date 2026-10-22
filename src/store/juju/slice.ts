@@ -827,7 +827,7 @@ const slice = createSlice({
       {
         payload,
       }: PayloadAction<{
-        cloudTag: string;
+        cloudTags: string[];
         update: Partial<SourceData<Record<string, string[]>>>;
       }>,
     ) => {

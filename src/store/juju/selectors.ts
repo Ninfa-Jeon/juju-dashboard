@@ -204,6 +204,11 @@ export const getCloudInfoState = createSelector(
   (sliceState) => sliceState.cloudInfo,
 );
 
+export const getCloudTags = createSelector(
+  [getCloudInfoState],
+  (cloudInfo) => Object.keys(cloudInfo.clouds ?? {}),
+);
+
 export const getUserCredentialsState = createSelector(
   [slice],
   (sliceState) => sliceState.userCredentials,

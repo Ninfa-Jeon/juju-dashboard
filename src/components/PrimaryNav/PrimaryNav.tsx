@@ -120,6 +120,15 @@ const PrimaryNav: FC = () => {
       ),
     },
     controllersLink,
+    {
+      component: NavLink,
+      to: urls.credentials.index,
+      icon: "security",
+      label: "Credentials",
+      status: blockedModels > 0 && (
+        <span className="entity-count is-negative">{blockedModels}</span>
+      ),
+    },
   ];
   if (auditLogsAllowed) {
     navigation.push({
