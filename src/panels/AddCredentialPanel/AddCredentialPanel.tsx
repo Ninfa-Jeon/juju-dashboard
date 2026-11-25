@@ -2,7 +2,6 @@ import { ActionButton, Button } from "@canonical/react-components";
 import { Formik } from "formik";
 import type { FC } from "react";
 import { useId, useState } from "react";
-import * as Yup from "yup";
 
 import FormikFormData from "components/FormikFormData";
 import Panel from "components/Panel";
@@ -12,15 +11,14 @@ import { testId } from "testing/utils";
 import Fields from "./Fields/Fields";
 import type { FormFields } from "./Fields/types";
 import { Label, TestId } from "./types";
+import { EMPTY_FORM_FIELDS, validateFormFields } from "./utils";
 
 const AddCredentialPanel: FC = () => {
   const formId = useId();
   const [isValid, setIsValid] = useState<boolean>(false);
   const [, , handleRemovePanelQueryParams] = usePanelQueryParams<{
     panel: null | string;
-  }>({
-    panel: null,
-  });
+  }>({ panel: null });
 
   return (
     <Panel
@@ -45,20 +43,13 @@ const AddCredentialPanel: FC = () => {
       width="unset"
     >
       <Formik<FormFields>
-        initialValues={{
-          name: "",
-          cloud: "",
-          region: "",
-        }}
+        initialValues={EMPTY_FORM_FIELDS}
         validateOnMount
+        validate={validateFormFields}
         // Submit will be handled later
         onSubmit={(_values) => {
           handleRemovePanelQueryParams();
         }}
-        validationSchema={Yup.object().shape({
-          name: Yup.string().required("Required"),
-          cloud: Yup.string().required("Required"),
-        })}
       >
         <FormikFormData onValidate={setIsValid} id={formId}>
           <Fields />

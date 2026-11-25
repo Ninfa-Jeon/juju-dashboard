@@ -51,7 +51,7 @@ describe("AddCredentialPanel Fields", () => {
   it("renders cloud options from cloud info", () => {
     renderComponent(
       <Formik<FormFields>
-        initialValues={{ name: "", cloud: "", region: "" }}
+        initialValues={{ name: "", cloud: "", region: "", authType: "" }}
         onSubmit={vi.fn()}
       >
         <Fields />
@@ -70,7 +70,7 @@ describe("AddCredentialPanel Fields", () => {
   it("disables region field when no cloud is selected", () => {
     renderComponent(
       <Formik<FormFields>
-        initialValues={{ name: "", cloud: "", region: "" }}
+        initialValues={{ name: "", cloud: "", region: "", authType: "" }}
         onSubmit={vi.fn()}
       >
         <Fields />
@@ -85,7 +85,7 @@ describe("AddCredentialPanel Fields", () => {
   it("populates region options when cloud is selected", async () => {
     renderComponent(
       <Formik<FormFields>
-        initialValues={{ name: "", cloud: "", region: "" }}
+        initialValues={{ name: "", cloud: "", region: "", authType: "" }}
         onSubmit={vi.fn()}
       >
         <Fields />
@@ -93,14 +93,14 @@ describe("AddCredentialPanel Fields", () => {
       { state },
     );
 
-    await userEvent.selectOptions(
-      screen.getByRole("combobox", { name: Label.CLOUD }),
-      "cloud-aws",
-    );
+    const cloudSelect = screen.getByRole("combobox", { name: Label.CLOUD });
+    const regionSelect = screen.getByRole("combobox", { name: Label.REGION });
 
-    expect(
-      screen.getByRole("combobox", { name: Label.REGION }),
-    ).not.toBeDisabled();
+    // Select a cloud
+    await userEvent.selectOptions(cloudSelect, "cloud-aws");
+
+    // Region field should now be enabled and show options
+    expect(regionSelect).not.toBeDisabled();
     expect(
       screen.getByRole("option", { name: "us-east-1" }),
     ).toBeInTheDocument();
@@ -112,7 +112,12 @@ describe("AddCredentialPanel Fields", () => {
   it("clears region when cloud selection changes", async () => {
     renderComponent(
       <Formik<FormFields>
-        initialValues={{ name: "", cloud: "cloud-aws", region: "us-east-1" }}
+        initialValues={{
+          name: "",
+          cloud: "cloud-aws",
+          region: "us-east-1",
+          authType: "",
+        }}
         onSubmit={vi.fn()}
       >
         <Fields />
@@ -131,14 +136,14 @@ describe("AddCredentialPanel Fields", () => {
       "cloud-gce",
     );
 
-    // Region should be cleared
+    // Region should be cleared (empty option selected)
     expect(regionSelect).toHaveValue("");
   });
 
   it("shows different regions for different clouds", async () => {
     renderComponent(
       <Formik<FormFields>
-        initialValues={{ name: "", cloud: "", region: "" }}
+        initialValues={{ name: "", cloud: "", region: "", authType: "" }}
         onSubmit={vi.fn()}
       >
         <Fields />

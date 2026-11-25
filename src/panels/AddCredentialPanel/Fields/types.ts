@@ -2,14 +2,26 @@ export enum Label {
   CLOUD = "Cloud",
   NAME = "Credential name",
   REGION = "Region (optional)",
+  AUTH_TYPE = "Auth Type",
   CREDENTIAL_DETAILS = "Credential Details",
   CLOUD_DETAILS = "Cloud Details",
+  AUTH_DETAILS = "Authentication Details",
+}
+
+export enum FieldName {
+  NAME = "name",
+  CLOUD = "cloud",
+  REGION = "region",
+  AUTH_TYPE = "authType",
+  AUTH_ATTRS = "authAttrs",
 }
 
 export type FormFields = {
-  name: string;
-  cloud: string;
-  region: string;
+  [FieldName.NAME]: string;
+  [FieldName.CLOUD]: string;
+  [FieldName.REGION]: string;
+  [FieldName.AUTH_TYPE]: string;
+  [FieldName.AUTH_ATTRS]: Record<string, string>;
 };
 
 export type AuthTypeField = {

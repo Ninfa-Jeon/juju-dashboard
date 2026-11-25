@@ -1,4 +1,4 @@
-import { act, fireEvent, screen } from "@testing-library/react";
+import { act, fireEvent, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 
 import type { RootState } from "store/store";
@@ -69,7 +69,7 @@ describe("AddCredentialPanel", () => {
     expect(regionField).toBeDisabled();
   });
 
-  it("enables the submit button when required fields are filled", async () => {
+  it("enables auth type dropdown when cloud is selected", async () => {
     renderComponent(<AddCredentialPanel />, {
       state,
       url: "/?panel=add-credential",
@@ -78,27 +78,46 @@ describe("AddCredentialPanel", () => {
     const cloudDropdown = screen.getByRole("combobox", {
       name: FieldsLabel.CLOUD,
     });
-    const regionDropdown = screen.getByRole("combobox", {
-      name: FieldsLabel.REGION,
+    const authTypeDropdown = screen.getByRole("combobox", {
+      name: FieldsLabel.AUTH_TYPE,
     });
-    const submitButton = screen.getByRole("button", { name: Label.SUBMIT });
 
-    // Check that the region dropdown and submit button are initially disabled
-    expect(regionDropdown).toBeDisabled();
-    expect(submitButton).toHaveAttribute("aria-disabled", "true");
+    // Auth type should be disabled initially
+    expect(authTypeDropdown).toBeDisabled();
 
-    // Fill in the required fields
+    // Select a cloud
+    await userEvent.selectOptions(cloudDropdown, "cloud-aws");
+
+    // Auth type dropdown should now be enabled
+    await waitFor(() => {
+      expect(authTypeDropdown).not.toBeDisabled();
+    });
+  });
+
+  it("keeps submit disabled until required auth fields are filled", async () => {
+    renderComponent(<AddCredentialPanel />, {
+      state,
+      url: "/?panel=add-credential",
+    });
+
     await userEvent.type(
       screen.getByRole("textbox", { name: FieldsLabel.NAME }),
       "my-credential",
     );
-    await userEvent.selectOptions(cloudDropdown, "cloud-aws");
+    await userEvent.selectOptions(
+      screen.getByRole("combobox", { name: FieldsLabel.CLOUD }),
+      "cloud-aws",
+    );
+
+    const secretKey = screen.getByLabelText(/Secret Key/);
+    const submitButton = screen.getByRole("button", { name: Label.SUBMIT });
+    expect(submitButton).toHaveAttribute("aria-disabled", "true");
+
+    await userEvent.type(await screen.findByLabelText(/Access Key/), "key");
+    await userEvent.type(secretKey, "secret");
 
     // Vanilla doesn't display validation until the field loses focus.
-    await act(() => fireEvent.blur(cloudDropdown));
-
-    // The region field and submit button should now be enabled
-    expect(regionDropdown).not.toBeDisabled();
+    await act(() => fireEvent.blur(secretKey));
     expect(submitButton).not.toHaveAttribute("aria-disabled", "true");
   });
 });
